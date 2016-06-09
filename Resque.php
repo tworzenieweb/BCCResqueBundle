@@ -36,16 +36,23 @@ class Resque
         \Resque_Redis::prefix($prefix);
     }
 
-    public function setRedisConfiguration($host, $port, $database)
+    public function setRedisConfiguration($host, $port, $database, $password = null)
     {
         $this->redisConfiguration = array(
             'host'     => $host,
             'port'     => $port,
             'database' => $database,
+            'password' => $password
         );
         $host = substr($host, 0, 1) == '/' ? $host : $host.':'.$port;
 
-        \Resque::setBackend($host, $database);
+        if (!isset($password)) {
+            \Resque::setBackend($host.':'.$port, $database);
+        } else {
+            $server = 'redis://:' . $password . '@' . $host . ':' . $port;
+            \Resque::setBackend($server, $database);
+            \Resque::redis()->auth($password);
+        }
     }
 
     public function setGlobalRetryStrategy($strategy)
@@ -127,7 +134,7 @@ class Resque
         if ($job instanceof ContainerAwareJob) {
             $job->setKernelOptions($this->kernelOptions);
         }
-        
+
         $this->attachRetryStrategy($job);
 
         return \ResqueScheduler::removeDelayed($job->queue, \get_class($job),$job->args);
@@ -138,7 +145,7 @@ class Resque
         if ($job instanceof ContainerAwareJob) {
             $job->setKernelOptions($this->kernelOptions);
         }
-        
+
         $this->attachRetryStrategy($job);
 
         return \ResqueScheduler::removeDelayedJobFromTimestamp($at, $job->queue, \get_class($job), $job->args);
