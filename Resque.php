@@ -44,7 +44,7 @@ class Resque
             'database' => $database,
             'password' => $password
         );
-        $host = substr($host, 0, 1) == '/' ? $host : $host.':'.$port;
+        //$host = substr($host, 0, 1) == '/' ? $host : $host.':'.$port;
 
         if (!isset($password)) {
             \Resque::setBackend($host.':'.$port, $database);
